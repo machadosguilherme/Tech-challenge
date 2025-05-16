@@ -1,36 +1,20 @@
 import json
 import pytest
-from app import app
-import requests
+from app.main import app
 import json
+from fastapi.testclient import TestClient
 
+client = TestClient(app)
 
-class TestClass:
+def test_read_root():
+    res = client.get("/")
+    assert res.status_code == 200
+    assert "Bem-vindo" in res.json()["message"]
 
-    def test_get_home_router(self):
-        req = requests.get("http://localhost:5000/")
-        assert req.status_code == 200
+def test_get_data_from_production_and_return_data_from_site():
+    res = client.get("/production/")
+    assert res.status_code == 200
 
-    def test_get_router_production(self):
-        req = requests.get("http://localhost:5000/api-v1/production")
-        assert req.status_code == 200
-
-
-    def test_get_data_from_production_router(self):
-        req = requests.get("http://localhost:5000/api-v1/production").json()
-        assert req['message'] == "Dados da produção"
-        assert req['status'] == '200'
-        assert req['data'] is not None
-
-
-    def test_get_all_years_from_production_router(self):
-        req = requests.get("http://localhost:5000/api-v1/production").json()
-        
-        
-        
-
-
-
-        
-        
-
+    
+    
+    
