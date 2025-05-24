@@ -9,16 +9,18 @@ class ProductionYearQuery(BaseModel):
     Attributes:
         year: Ano da produção (1901-2999)
     """
-    year: int = Field(
-        ...,
+    year: Optional[int] = Field(
+        None,
         gt=1900,
         lt=3000,
         description="Ano da produção (ex: 2023)",
         examples=[2023]
-        )
+    )
 
-    @field_validator('year')
+    @field_validator('year', mode="before")
     def validate_year(cls, value):
+        if value is None:
+            return value
         current_year = datetime.now().year + 1000
         if value > current_year:
             raise ValueError(f"Ano não pode ser maior que {current_year}")
@@ -57,6 +59,7 @@ class ProductionResponse(BaseModel):
     """
     message: str
     data: List[Dict[str, Any]] | List[ProductionItem] | Dict[str, Any] = None
+    # data: Optional[List[ProductionItem]] = None
     year: Optional[int] = None
     status: int = 200
 

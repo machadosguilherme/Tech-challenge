@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from app.schemas.production_per_year import *
+from app.schemas.production import *
 import os
 from dotenv import load_dotenv
 import pandas as pd
@@ -34,21 +34,22 @@ app.add_middleware(
 def read_root():
     return {"message": "Bem-vindo à API de Vitivinicultura da Embrapa"}
 
-@app.get("/production_per_year/",
+@app.get("/production/",
          response_model=ProductionResponse,
          responses={
              200: {
                  "description": "Dados de produção por ano",
                  "model": ProductionResponse
              },
-             404: {
-                 "description": "Ano não encontrado"
+             400: {
+                 "description": "Ano não encontrado",
+                 "model": ErrorResponse
              }
          })
 def get_production(query: ProductionYearQuery = Depends()):
     """
     Consulta de dados de produção
-    Parâmetros obrigatórios:
+    Parâmetros opcional:
     - ano: int (ex: 2023)
     """
 
@@ -68,15 +69,28 @@ def get_production(query: ProductionYearQuery = Depends()):
     
     if ENV == 'PROD':
 
-        data = aux_functions.get_production_data_per_year(query.year)
-        
-        return ProductionResponse(
-            message=f"Dados da produção para o ano {query.year}",
-            data=data,
-            year=query.year
-        )
+        if query.year is None:
+            data = aux_functions.get_production_data()
+            print(type(data))
+
+            return ProductionResponse(
+                message="Dados da produção",
+                data=data,
+                year=None                                
+            )            
+
+        else:
+            data = aux_functions.get_production_data_per_year(query.year)
+            
+            return ProductionResponse(
+                message=f"Dados da produção para o ano {query.year}",
+                data=data,
+                year=query.year
+            )
         
     
+
+
 
 @app.get("/processamento/")
 def get_processamento(ano: int = None):
