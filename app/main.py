@@ -71,7 +71,6 @@ def get_production(query: ProductionYearQuery = Depends()):
 
         if query.year is None:
             data = aux_functions.get_production_data()
-            print(type(data))
 
             return ProductionResponse(
                 message="Dados da produção",

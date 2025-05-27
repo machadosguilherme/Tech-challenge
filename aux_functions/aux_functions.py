@@ -3,6 +3,11 @@ import datetime
 import json
 import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+import time
+import os
 
 def convert_data_to_api(original_data):
     """
@@ -18,20 +23,13 @@ def convert_data_to_api(original_data):
     controles = original_data['control'].loc[original_data['control'].str.contains('_')].unique()
 
     # Criar dicionário para armazenar os dados dos produtos principais com seus subprodutos
-    categorias = {}
-    for controle in controles:
-        if 'vm_' in controle:
-            #Vinho de mesa
-            categorias['VINHO DE MESA'] = "vm"
-        elif 'vv_' in controle:
-            #Vinho de mesa
-            categorias['VINHO FINO DE MESA (VINIFERA)'] = "vv"
-        elif 'su_' in controle:
-            #Suco
-            categorias['SUCO'] = "su"
-        elif 'de_' in controle:
-            #Destilado
-            categorias['DESTILADO'] = "de"
+
+    categorias = {
+        "vm": "VINHO DE MESA",
+        "vv": "VINHO FINO DE MESA (VINIFERA)",
+        "su": "SUCO",
+        "de": "DESTILADO"
+    }
 
     # Dicionário para mapear produtos principais e seus subprodutos
     produtos_map = {}
@@ -60,8 +58,11 @@ def convert_data_to_api(original_data):
         
         #É um subproduto
         else:
-            #O produto pai é a chave do control.split('_')[0]
-            produto_pai = ""          
+            # Verificar se o produto pai já está no dicionário
+
+            #Categoria do subproduto
+            produto_pai = categorias[control.split('_')[0]]
+
             if produto_pai in produtos_map:
                 subproduto = {
                     'nome': produto,
@@ -174,13 +175,41 @@ def get_production_data():
     Function to get production data from downloaded CSV file.
     """
 
-    # Fazer o download do csv do seguinte site: http://vitibrasil.cnpuv.embrapa.br/download/Producao.csv
-    url = "http://vitibrasil.cnpuv.embrapa.br/download/Producao.csv"
-    response = requests.get(url)
+    # url = "http://vitibrasil.cnpuv.embrapa.br/download/Producao.csv"
 
-    # Salvar em arquivo
-    with open('data/Producao.csv', 'wb') as file:
-        file.write(response.content)
+    # # Configurar opções do Chrome para download automático
+    # download_dir = os.path.abspath('data')
+    # chrome_options = Options()
+    # chrome_options.add_experimental_option('prefs', {
+    #     "download.default_directory": download_dir,
+    #     "download.prompt_for_download": False,
+    #     "directory_upgrade": True,
+    #     "safebrowsing.enabled": True
+    # })
+    # chrome_options.add_argument("--headless")
+
+    # # Iniciar o driver do Chrome
+    # driver = webdriver.Chrome(options=chrome_options)
+    # driver.get(url)
+
+    # # Esperar o botão de download aparecer e clicar
+    # download_link = driver.find_element(By.LINK_TEXT, "Producao.csv")
+    # download_link.click()
+
+    # # Esperar o download terminar
+    # file_path = os.path.join(download_dir, "Producao.csv")
+    # timeout = 30
+    # while timeout > 0 and not os.path.exists(file_path):
+    #     time.sleep(1)
+    #     timeout -= 1
+
+    # driver.quit()
+
+    # response = requests.get(url)
+
+    # # Salvar em arquivo
+    # with open('data/Producao.csv', 'wb') as file:
+    #     file.write(response.content)
 
     #Transformar em dataframe
     data = pd.read_csv('data/Producao.csv', sep=';')
