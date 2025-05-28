@@ -9,89 +9,6 @@ from selenium.webdriver.common.by import By
 import time
 import os
 
-def convert_data_to_api(original_data):
-    """
-    Função definitiva que corrige os problemas de quantidade zerada/nula.
-    Garante que as quantidades das categorias sejam preenchidas corretamente.
-    """
-    # Mapeamento completo de categorias
-    CATEGORIAS = {
-        "vm": {
-            "nome": "VINHO DE MESA",
-            "produto_principal": "VINHO DE MESA"
-        },
-        "vv": {
-            "nome": "VINHO FINO DE MESA (VINIFERA)",
-            "produto_principal": "VINHO FINO DE MESA (VINIFERA)"
-        },
-        "su": {
-            "nome": "SUCO",
-            "produto_principal": "SUCO"
-        },
-        "de": {
-            "nome": "DERIVADOS",
-            "produto_principal": "DERIVADOS"
-        }
-    }
-
-    # Inverter o mapeamento para busca pelo nome do produto principal
-    PRODUTOS_PRINCIPAIS = {v["produto_principal"]: k for k, v in CATEGORIAS.items()}
-
-    # Estrutura final
-    resultado = {"anos": {}}
-
-    # Obter lista de anos
-    anos = [col for col in original_data.columns[3:] if col.isdigit()]
-
-    # Primeiro: criar estrutura para todos os anos e categorias
-    for ano in anos:
-        ano_int = int(ano)
-        resultado["anos"][ano_int] = {
-            "categorias": {
-                cat_info["nome"]: {
-                    "quantidade": 0,  # Inicializa com 0
-                    "subprodutos": []
-                } for cat, cat_info in CATEGORIAS.items()
-            }
-        }
-
-    # Processar cada linha do DataFrame
-    for _, row in original_data.iterrows():
-        control = row['control']
-        produto_nome = row['produto']
-        
-        # Verificar se é um produto principal (nome do produto está no mapeamento)
-        if produto_nome in PRODUTOS_PRINCIPAIS:
-            categoria_key = PRODUTOS_PRINCIPAIS[produto_nome]
-            categoria_nome = CATEGORIAS[categoria_key]["nome"]
-            
-            for ano in anos:
-                ano_int = int(ano)
-                quantidade = row[ano] if pd.notna(row[ano]) else 0
-                
-                # Atualizar quantidade da categoria
-                resultado["anos"][ano_int]["categorias"][categoria_nome]["quantidade"] = quantidade
-        
-        # Verificar se é um subproduto (contém underscore)
-        elif '_' in control:
-            prefixo = control.split('_')[0]
-            if prefixo not in CATEGORIAS:
-                continue
-                
-            categoria_nome = CATEGORIAS[prefixo]["nome"]
-            
-            for ano in anos:
-                ano_int = int(ano)
-                quantidade = row[ano] if pd.notna(row[ano]) else 0
-                
-                # Adicionar subproduto
-                resultado["anos"][ano_int]["categorias"][categoria_nome]["subprodutos"].append({
-                    "nome": produto_nome,
-                    "quantidade": quantidade
-                })
-
-    return resultado
-
 def get_production_data_per_year(year):
     """
     Function to get production data for a specific year.
@@ -163,58 +80,96 @@ def get_production_data_per_year(year):
     except Exception as e:
         print(f"Erro inesperado: {e}")
 
-def get_production_data():
+def get_production_data_from_csv():
     """
     Function to get production data from downloaded CSV file.
     """
 
-    # url = "http://vitibrasil.cnpuv.embrapa.br/download/Producao.csv"
-
-    # # Configurar opções do Chrome para download automático
-    # download_dir = os.path.abspath('data')
-    # chrome_options = Options()
-    # chrome_options.add_experimental_option('prefs', {
-    #     "download.default_directory": download_dir,
-    #     "download.prompt_for_download": False,
-    #     "directory_upgrade": True,
-    #     "safebrowsing.enabled": True
-    # })
-    # chrome_options.add_argument("--headless")
-
-    # # Iniciar o driver do Chrome
-    # driver = webdriver.Chrome(options=chrome_options)
-    # driver.get(url)
-
-    # # Esperar o botão de download aparecer e clicar
-    # download_link = driver.find_element(By.LINK_TEXT, "Producao.csv")
-    # download_link.click()
-
-    # # Esperar o download terminar
-    # file_path = os.path.join(download_dir, "Producao.csv")
-    # timeout = 30
-    # while timeout > 0 and not os.path.exists(file_path):
-    #     time.sleep(1)
-    #     timeout -= 1
-
-    # driver.quit()
-
-    # response = requests.get(url)
-
-    # # Salvar em arquivo
-    # with open('data/Producao.csv', 'wb') as file:
-    #     file.write(response.content)
-
     #Transformar em dataframe
     data = pd.read_csv('data/Producao.csv', sep=';')
-    result = convert_data_to_api(data)
-    
-    #Ler o Dataframe
-    return result
 
-if __name__ == "__main__":
-    
-    data = get_production_data()
+    """
+    Função definitiva que corrige os problemas de quantidade zerada/nula.
+    Garante que as quantidades das categorias sejam preenchidas corretamente.
+    """
+    # Mapeamento completo de categorias
+    CATEGORIAS = {
+        "vm": {
+            "nome": "VINHO DE MESA",
+            "produto_principal": "VINHO DE MESA"
+        },
+        "vv": {
+            "nome": "VINHO FINO DE MESA (VINIFERA)",
+            "produto_principal": "VINHO FINO DE MESA (VINIFERA)"
+        },
+        "su": {
+            "nome": "SUCO",
+            "produto_principal": "SUCO"
+        },
+        "de": {
+            "nome": "DERIVADOS",
+            "produto_principal": "DERIVADOS"
+        }
+    }
 
-    #Convert to json
-    result = data.to_dict(orient='records')
-    convert_data_to_api(result)
+    # Inverter o mapeamento para busca pelo nome do produto principal
+    PRODUTOS_PRINCIPAIS = {v["produto_principal"]: k for k, v in CATEGORIAS.items()}
+
+    # Estrutura final
+    resultado = {"anos": {}}
+
+    # Obter lista de anos
+    anos = [col for col in data.columns[3:] if col.isdigit()]
+
+    # Primeiro: criar estrutura para todos os anos e categorias
+    for ano in anos:
+        ano_int = int(ano)
+        resultado["anos"][ano_int] = {
+            "categorias": {
+                cat_info["nome"]: {
+                    "quantidade": 0,  # Inicializa com 0
+                    "subprodutos": []
+                } for cat, cat_info in CATEGORIAS.items()
+            }
+        }
+
+    # Processar cada linha do DataFrame
+    for _, row in data.iterrows():
+        control = row['control']
+        produto_nome = row['produto']
+        
+        # Verificar se é um produto principal (nome do produto está no mapeamento)
+        if produto_nome in PRODUTOS_PRINCIPAIS:
+            categoria_key = PRODUTOS_PRINCIPAIS[produto_nome]
+            categoria_nome = CATEGORIAS[categoria_key]["nome"]
+            
+            for ano in anos:
+                ano_int = int(ano)
+                quantidade = row[ano] if pd.notna(row[ano]) else 0
+                
+                # Atualizar quantidade da categoria
+                resultado["anos"][ano_int]["categorias"][categoria_nome]["quantidade"] = quantidade
+        
+        # Verificar se é um subproduto (contém underscore)
+        elif '_' in control:
+            prefixo = control.split('_')[0]
+            if prefixo not in CATEGORIAS:
+                continue
+                
+            categoria_nome = CATEGORIAS[prefixo]["nome"]
+            
+            for ano in anos:
+                ano_int = int(ano)
+                quantidade = row[ano] if pd.notna(row[ano]) else 0
+                
+                # Adicionar subproduto
+                resultado["anos"][ano_int]["categorias"][categoria_nome]["subprodutos"].append({
+                    "nome": produto_nome,
+                    "quantidade": quantidade
+                })
+
+    return resultado
+
+if __name__ == "__main__":    
+    pass    
+
