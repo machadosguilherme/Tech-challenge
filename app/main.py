@@ -18,7 +18,6 @@ app = FastAPI(
     title='Embrapa Vitivinicultura API',
     description='API para consulta de dados de vitivinicultura da Embrapa',
     version="0.1.0"
-
 )
 
 #CORS
@@ -52,30 +51,12 @@ def get_production(query: ProductionYearQuery = Depends()):
     Parâmetros opcional:
     - ano: int (ex: 2023)
     """
-
-    if ENV == 'LOCAL':
-        #Read the file from data folder
-        with open('data/Producao.csv', 'r') as file:
-            data = pd.read_csv('data/Producao.csv', sep=';')            
-        #Convert to json
-        result = data.to_dict(orient='records')
-        result = aux_functions.convert_data_to_api(result)
-            
-        return ProductionResponse(
-            message="Dados da produção",
-            data=result,
-            year=query.year
-        )
-    
-    if ENV == 'PROD':
-
+    try:
         if query.year is None:
             data = aux_functions.get_production_data()
-
             return ProductionResponse(
                 message="Dados da produção",
                 data=data,
-                year=None                                
             )            
 
         else:
@@ -84,13 +65,10 @@ def get_production(query: ProductionYearQuery = Depends()):
             return ProductionResponse(
                 message=f"Dados da produção para o ano {query.year}",
                 data=data,
-                year=query.year
             )
-        
-    
-
-
-
+    except Exception as e:
+        print("Error na função get_production: {}".format(e))
+            
 @app.get("/processamento/")
 def get_processamento(ano: int = None):
     """

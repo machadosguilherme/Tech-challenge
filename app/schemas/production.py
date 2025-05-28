@@ -59,8 +59,6 @@ class ProductionResponse(BaseModel):
     """
     message: str
     data: List[Dict[str, Any]] | List[ProductionItem] | Dict[str, Any] = None
-    # data: Optional[List[ProductionItem]] = None
-    year: Optional[int] = None
     status: int = 200
 
 class ErrorResponse(BaseModel):
