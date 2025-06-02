@@ -61,8 +61,8 @@ pytest==8.3.5
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 python-jose==3.5.0
+python-multipart==0.0.20
 pytz==2025.2
-pywin32==306
 PyYAML==6.0.2
 pyzmq==26.0.0
 referencing==0.36.2
