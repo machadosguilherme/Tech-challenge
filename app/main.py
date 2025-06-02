@@ -1,7 +1,7 @@
 # app/main.py
 
 from datetime import datetime, timedelta
-from typing import Optional
+import os
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -11,11 +11,16 @@ from app.routers.recurso import router as dados_router
 from app.routers.healthz import router as health_router  
 
 # ─── Configurações de JWT ──────────────────────────────────────────────────────
-SECRET_KEY = "muitosecreto"  # em produção, guarde fora do código!
+SECRET_KEY = os.environ.get("API_SECRET_KEY") # em produção, guarde fora do código!
+if not SECRET_KEY:
+    raise ValueError("API_SECRET_KEY não definida no ambiente")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 # ────────────────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
@@ -28,7 +33,7 @@ app = FastAPI(
 @app.post("/token", summary="Gera token de acesso")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     # Exemplo simples “admin” / “password”
-    if not (form_data.username == "admin" and form_data.password == "password"):
+    if not (form_data.username == ADMIN_USERNAME and form_data.password == ADMIN_PASSWORD):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuário ou senha incorretos",
