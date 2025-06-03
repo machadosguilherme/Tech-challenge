@@ -47,3 +47,43 @@ pandas
 python-jose[cryptography]
 pytest
 python-multipart       # necessário para OAuth2PasswordRequestForm
+```
+
+### Rodar a API Local
+
+1. Clone o repositório:
+   ```bash
+    git clone https://github.com/machadosguilherme/Tech-challenge.git
+    cd Tech-challenge
+    ```
+2. Crie e ative um ambiente virtual:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Linux/Mac
+   venv\Scripts\activate     # Windows
+   ```
+3. Instale as dependências:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Configuração do ambiente:
+  Na raiz do projeto, crie um arquivo `.env` com as informações que estão no arquivo `.env.example`:    
+    ```text
+    API_SECRET_KEY=your_secret_key
+    ADMIN_USERNAME=admin
+    ADMIN_PASSWORD=password
+    ```
+5. Execute a API:
+    ```bash
+    uvicorn app.main:app --reload
+    ```
+6. Acesse a documentação interativa da API (Swagger) em:
+    ```
+    http://localhost:8000/docs
+    ```
+7. Acessar o Streamlit:
+    ```
+    cd dashboard
+    streamlit run streamlit_app.py    
+    http://localhost:8501
+    ```

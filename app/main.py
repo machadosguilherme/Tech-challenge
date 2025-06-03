@@ -8,7 +8,11 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 
 from app.routers.recurso import router as dados_router
-from app.routers.healthz import router as health_router  
+from app.routers.healthz import router as health_router
+
+from dotenv import load_dotenv
+
+load_dotenv()  # Carrega variáveis de ambiente do arquivo .env
 
 from dotenv import load_dotenv
 
