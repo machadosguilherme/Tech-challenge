@@ -44,12 +44,14 @@ packaging==24.0
 pandas==2.2.3
 parso==0.8.4
 passlib==1.7.4
+pexpect==4.9.0
 pillow==11.2.1
 platformdirs==4.2.0
 pluggy==1.6.0
 prompt-toolkit==3.0.43
 protobuf==6.31.0
 psutil==5.9.8
+ptyprocess==0.7.0
 pure-eval==0.2.2
 pyarrow==20.0.0
 pyasn1==0.6.1
