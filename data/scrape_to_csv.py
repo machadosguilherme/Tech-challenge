@@ -245,7 +245,7 @@ if __name__ == "__main__":
     if len(list_producao)>0:
         df = pd.DataFrame(list_producao, columns=[
             'Ano', 'Categoria', 'Produto', 'Quantidade(L.)'])
-        df.to_csv('./data_test/producao.csv', index=False, encoding='utf-8', sep=',')    
+        df.to_csv('./data/producao.csv', index=False, encoding='utf-8', sep=',')    
 
 
     #--------------------------------------------
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
         df = pd.DataFrame(list_processamento, columns=[
             'Opção', 'Ano', 'Categoria', 'Cultivar', 'Quantidade(Kg.)'])
-        df.to_csv('./data_test/processamento.csv', index=False, encoding='utf-8', sep=',')
+        df.to_csv('./data/processamento.csv', index=False, encoding='utf-8', sep=',')
 
 
     #--------------------------------------------
@@ -299,7 +299,7 @@ if __name__ == "__main__":
         # Colunas: Opção,Ano,Países,Quantidade(Kg.),Valor (US$)
         df = pd.DataFrame(list_importacao, columns=[
             'Opção', 'Ano','Países', 'Quantidade(Kg.)', 'Valor (US$)'])
-        df.to_csv('./data_test/importacao.csv', index=False, encoding='utf-8', sep=',')
+        df.to_csv('./data/importacao.csv', index=False, encoding='utf-8', sep=',')
 
     #--------------------------------------------
     # Exportacao
@@ -323,7 +323,7 @@ if __name__ == "__main__":
         # Colunas: Opção,Ano,Países,Quantidade(Kg.),Valor (US$)
         df = pd.DataFrame(list_exportacao, columns=[
             'Opção', 'Ano','Países', 'Quantidade(Kg.)', 'Valor (US$)'])
-        df.to_csv('./data_test/exportacao.csv', index=False, encoding='utf-8', sep=',')
+        df.to_csv('./data/exportacao.csv', index=False, encoding='utf-8', sep=',')
 
 
     #--------------------------------------------
@@ -339,4 +339,4 @@ if __name__ == "__main__":
     if len(list_comercializacao)>0:
         df = pd.DataFrame(list_comercializacao, columns=[
             'Ano', 'Categoria', 'Produto', 'Quantidade(L)'])
-        df.to_csv('./data_test/comercializacao.csv', index=False, encoding='utf-8', sep=',')
+        df.to_csv('./data/comercializacao.csv', index=False, encoding='utf-8', sep=',')
