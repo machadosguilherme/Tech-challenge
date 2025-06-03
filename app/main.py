@@ -1,99 +1,93 @@
-from fastapi import FastAPI, Query, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from app.schemas.production import *
+# app/main.py
+
+from datetime import datetime, timedelta
 import os
+
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+
+from app.routers.recurso import router as dados_router
+from app.routers.healthz import router as health_router
+
 from dotenv import load_dotenv
-import pandas as pd
-from aux_functions import aux_functions
-from fastapi.responses import JSONResponse as jsonify
 
-load_dotenv()
+load_dotenv()  # Carrega variáveis de ambiente do arquivo .env
 
-# Carregar variáveis de ambiente
-ENV = os.getenv('ENV')
-HOST=os.getenv('HOST')
-PORT=os.getenv('PORT')
+# ─── Configurações de JWT ──────────────────────────────────────────────────────
+SECRET_KEY = os.environ.get("API_SECRET_KEY") # em produção, guarde fora do código!
+if not SECRET_KEY:
+    raise ValueError("API_SECRET_KEY não definida no ambiente")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+# ────────────────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title='Embrapa Vitivinicultura API',
-    description='API para consulta de dados de vitivinicultura da Embrapa',
-    version="0.1.0"
+    title="API Vinicultura Embrapa",
+    version="1.1.0",
+    description="Dados de vitivinicultura com health-check e autenticação JWT"
 )
 
-#CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
+# ─── Rota de login / token ─────────────────────────────────────────────────────
+@app.post("/token", summary="Gera token de acesso")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    # Exemplo simples “admin” / “password”
+    if not (form_data.username == ADMIN_USERNAME and form_data.password == ADMIN_PASSWORD):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuário ou senha incorretos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {"sub": form_data.username, "exp": expire}
+    token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
+# ────────────────────────────────────────────────────────────────────────────────
 
-@app.get("/")
-def read_root():
-    return {"message": "Bem-vindo à API de Vitivinicultura da Embrapa"}
 
-@app.get("/production/",
-         response_model=ProductionResponse,
-         responses={
-             200: {
-                 "description": "Dados de produção por ano",
-                 "model": ProductionResponse
-             },
-             400: {
-                 "description": "Ano não encontrado",
-                 "model": ErrorResponse
-             }
-         })
-def get_production(query: ProductionYearQuery = Depends()):
+def verify_token(token: str = Depends(oauth2_scheme)):
     """
-    Consulta de dados de produção
-    Parâmetros opcional:
-    - ano: int (ex: 2023)
+    Dependência que valida o token JWT em cada requisição protegida.
     """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token inválido ou expirado",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
-        if query.year is None:
-            data = aux_functions.get_production_data_from_csv()
-            return ProductionResponse(
-                message="Dados da produção",
-                data=data,
-            )            
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        return username
+    except JWTError:
+        raise credentials_exception
 
-        else:
-            data = aux_functions.get_production_data_per_year(query.year)
-            
-            return ProductionResponse(
-                message=f"Dados da produção para o ano {query.year}",
-                data=data,
-            )
-    except Exception as e:
-        print("Error na função get_production: {}".format(e))
-            
-@app.get("/processamento/")
-def get_processamento(ano: int = None):
-    """
-    Consulta de dados de processamento
-    """
-    #Logica 
 
-@app.get("/comercializacao/")
-def get_comercializacao(ano: int = None):
-    """
-    Consulta de dados de comercializacao
-    """
-    #Logica 
+# ─── 1) Health-check PÚBLICO (NÃO exige token) ─────────────────────────────────
+app.include_router(
+    health_router,
+    prefix="/healthz",
+    tags=["monitoramento"]
+)
+# Agora, chamar GET http://127.0.0.1:8000/healthz/ retorna status=ok e detalhe, sem pedir token.
 
-@app.get("/importacao/")
-def get_importacao(ano: int = None):
-    """
-    Consulta de dados de importacao
-    """
-    #Logica 
 
-@app.get("/exportacao/")
-def get_exportacao(ano: int = None):
-    """
-    Consulta de dados de exportacao
-    """
-    #Logica 
+# ─── 2) Endpoints de dados (protegidos por JWT) ─────────────────────────────────
+app.include_router(
+    dados_router,
+    dependencies=[Depends(verify_token)],
+    responses={401: {"description": "Não autorizado"}},
+    tags=["dados"]
+)
+# Qualquer rota definida em `dados_router` estará disponível só com "Authorization: Bearer <JWT>".
 
+# ─── 3) Rota raiz (também pública) ───────────────────────────────────────────────
+@app.get("/", tags=["raiz"], summary="Rota raiz")
+async def read_root():
+    return {"message": "API vinicultura está rodando!"}
