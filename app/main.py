@@ -10,6 +10,10 @@ from jose import JWTError, jwt
 from app.routers.recurso import router as dados_router
 from app.routers.healthz import router as health_router  
 
+from dotenv import load_dotenv
+
+load_dotenv()  # Carrega variáveis de ambiente do arquivo .env
+
 # ─── Configurações de JWT ──────────────────────────────────────────────────────
 SECRET_KEY = os.environ.get("API_SECRET_KEY") # em produção, guarde fora do código!
 if not SECRET_KEY:
